@@ -1,5 +1,6 @@
-const BASE_URL =
-  "https://cdn.jsdelivr.net/gh/fawazahmed0/currency-api@1/latest/currencies";
+
+const API_KEY = "59565a8abe07add54f836cf9"; // ← Replace with your actual key
+const BASE_URL = `https://v6.exchangerate-api.com/v6/${API_KEY}/latest`;
 
 const dropdowns = document.querySelectorAll(".dropdown select");
 const btn = document.querySelector("form button");
@@ -8,7 +9,7 @@ const toCurr = document.querySelector(".to select");
 const msg = document.querySelector(".msg");
 
 for (let select of dropdowns) {
-  for (currCode in countryList) {
+  for (let currCode in countryList) {
     let newOption = document.createElement("option");
     newOption.innerText = currCode;
     newOption.value = currCode;
@@ -26,26 +27,42 @@ for (let select of dropdowns) {
 }
 
 const updateExchangeRate = async () => {
-  let amount = document.querySelector(".amount input");
-  let amtVal = amount.value;
-  if (amtVal === "" || amtVal < 1) {
-    amtVal = 1;
-    amount.value = "1";
-  }
-  const URL = `${BASE_URL}/${fromCurr.value.toLowerCase()}/${toCurr.value.toLowerCase()}.json`;
-  let response = await fetch(URL);
-  let data = await response.json();
-  let rate = data[toCurr.value.toLowerCase()];
+  let amountInput = document.querySelector(".amount input");
+  let amtVal = parseFloat(amountInput.value);
 
-  let finalAmount = amtVal * rate;
-  msg.innerText = `${amtVal} ${fromCurr.value} = ${finalAmount} ${toCurr.value}`;
+  if (isNaN(amtVal) || amtVal < 1) {
+    amtVal = 1;
+    amountInput.value = "1";
+  }
+
+  const from = fromCurr.value;
+  const to = toCurr.value;
+  const URL = `${BASE_URL}/${from}`;
+
+  console.log("🔄 Fetching from:", URL);
+
+  try {
+    const response = await fetch(URL);
+    if (!response.ok) throw new Error("API response not OK");
+
+    const data = await response.json();
+    const rate = data.conversion_rates[to];
+
+    if (!rate) throw new Error("Rate not found");
+
+    const finalAmount = (amtVal * rate).toFixed(2);
+    msg.innerText = `${amtVal} ${from} = ${finalAmount} ${to}`;
+  } catch (error) {
+    console.error("❌ Error:", error);
+    msg.innerText = "Something went wrong. Try again!";
+  }
 };
 
 const updateFlag = (element) => {
-  let currCode = element.value;
-  let countryCode = countryList[currCode];
-  let newSrc = `https://flagsapi.com/${countryCode}/flat/64.png`;
-  let img = element.parentElement.querySelector("img");
+  const currCode = element.value;
+  const countryCode = countryList[currCode];
+  const newSrc = `https://flagsapi.com/${countryCode}/flat/64.png`;
+  const img = element.parentElement.querySelector("img");
   img.src = newSrc;
 };
 
